@@ -2,6 +2,52 @@
 
 **WaferDefectX** is an end-to-end computer vision and machine learning pipeline designed for automated inspection of semiconductor wafers. It detects surface defects (scratches, particles) using a hybrid approach of classical computer vision for robust localization and machine learning for classification.
 
+---
+
+## 🖼️ Results Gallery
+
+### 1. Real-time Defect Detection
+*Automated localization of surface defects with multi-class classification (Scratch, Particle, Void)*
+
+![Defect Detection Output](results/wafer_defect_detection_before_after.png)
+
+---
+
+### 2. End-to-End Classification Pipeline
+*6-stage processing pipeline: Input → CLAHE → Edge Detection → Morphology → Feature Extraction → Classification*
+
+![Classification Pipeline](results/defect_classification_pipeline.png)
+
+---
+
+### 3. Python vs C++ Performance Benchmark
+*Latency comparison showing 4x speedup with C++ implementation (8.6ms → 2.1ms)*
+
+![Performance Benchmark](results/python_cpp_performance_benchmark.png)
+
+---
+
+### 4. Frequency-Domain Noise Suppression
+*FFT-based filtering for wafer noise removal: Original vs Low-Pass vs Band-Pass filtered*
+
+![FFT Filter Comparison](results/fft_filter_comparison.png)
+
+---
+
+### 5. Filter Frequency Responses
+*Visualization of Low-Pass, High-Pass, and Band-Pass filter masks in frequency domain*
+
+![Filter Responses](results/filter_responses.png)
+
+---
+
+### 6. Spectrum Analysis
+*Spatial vs Frequency domain representation of wafer images*
+
+![Spectrum Analysis](results/spectrum_analysis.png)
+
+---
+
 ## 📌 Project Overview
 The system simulates a high-throughput inspection tool found in semiconductor fabs (e.g., Applied Materials). It is designed with modularity and performance in mind, featuring a Python prototype for R&D and a C++ core for production deployment.
 
