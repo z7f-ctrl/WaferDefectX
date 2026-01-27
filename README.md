@@ -101,5 +101,5 @@ The prototype is developed in Python for rapid iteration. The `preprocess` and `
 - Implement multi-threading/CUDA optimization in C++.
 
 ---
-**Author**: [Your Name/AI Agent]
+**Author**: Ashik Sharon M
 **Date**: Jan 2026
