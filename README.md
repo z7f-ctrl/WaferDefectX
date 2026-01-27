@@ -29,6 +29,9 @@ WaferDefectX/
 │   ├── main.py             # Driver for visualization
 │   ├── train_eval.py       # ML Training pipeline
 │   └── benchmark.py        # Performance testing
+├── frequency_analysis/     # Frequency-Domain Processing
+│   ├── fft_filtering.py    # FFT-based noise suppression
+│   └── spectrum_visualization.py  # Spectrum analysis tools
 ├── cpp/                    # Production Core (C++)
 │   ├── CMakeLists.txt      # Build config
 │   ├── preprocess.cpp      # Optimized CV
@@ -37,6 +40,18 @@ WaferDefectX/
 ├── data/                   # Datasets (Synthetic)
 ├── results/                # Visualizations & Models
 └── benchmarks/             # Performance reports
+```
+
+## 🔬 Frequency-Domain Analysis
+Explored **frequency-domain filtering for wafer noise suppression** using FFT-based techniques:
+- **Low-Pass Filtering**: Removes high-frequency sensor noise while preserving defect structures
+- **Band-Pass Filtering**: Isolates defect-relevant spatial frequencies for enhanced detection
+- **Spectrum Visualization**: Analyzes frequency characteristics of wafer images and defects
+
+Run frequency analysis:
+```bash
+cd WaferDefectX/frequency_analysis
+python3 spectrum_visualization.py
 ```
 
 ## 🚀 Getting Started
