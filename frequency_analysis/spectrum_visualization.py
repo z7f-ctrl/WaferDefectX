@@ -19,8 +19,9 @@ class SpectrumVisualizer:
     
     def plot_spectrum(self, image, title="Frequency Spectrum", save_path=None):
         """Plot magnitude spectrum of an image."""
-        f_shift = self.fft_filter.compute_fft(image)
-        spectrum = self.fft_filter.compute_magnitude_spectrum(f_shift)
+        # compute_fft now returns (dft_shift, shape)
+        dft_shift, _ = self.fft_filter.compute_fft(image)
+        spectrum = self.fft_filter.compute_magnitude_spectrum(dft_shift)
         
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
         
@@ -78,8 +79,8 @@ class SpectrumVisualizer:
         for idx, (img, label) in enumerate([(gray, "Original"), 
                                              (denoised, "Denoised"), 
                                              (enhanced, "Enhanced")]):
-            f_shift = self.fft_filter.compute_fft(img)
-            spectrum = self.fft_filter.compute_magnitude_spectrum(f_shift)
+            dft_shift, _ = self.fft_filter.compute_fft(img)
+            spectrum = self.fft_filter.compute_magnitude_spectrum(dft_shift)
             axes[1, idx].imshow(spectrum, cmap='hot')
             axes[1, idx].set_title(f"{label} Spectrum", fontsize=12)
             axes[1, idx].axis('off')
@@ -98,22 +99,33 @@ class SpectrumVisualizer:
         """Visualize filter frequency responses."""
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
         
+        # Need optimal size for OpenCV DFT if strict, but for visualization shape is approx
+        # create_lowpass_filter returns 2-channel, we visualize magnitude (which is just the filter values)
+        
         # Low-pass filter
-        lpf = self.fft_filter.create_lowpass_filter(shape, cutoff_freq=30)
+        lpf_2ch = self.fft_filter.create_lowpass_filter(shape, cutoff_freq=30)
+        lpf = lpf_2ch[:,:,0] # Real part is enough since Imag is same/zero in filter construction
         axes[0].imshow(lpf, cmap='gray')
         axes[0].set_title("Low-Pass Filter\n(Noise Suppression)", fontsize=12, fontweight='bold')
         axes[0].axis('off')
         
         # High-pass filter
-        hpf = self.fft_filter.create_highpass_filter(shape, cutoff_freq=30)
+        # create_highpass_filter was removed from FFTFilter in new version? check code.
+        # It was converted to create_lowpass usage in denoise_wafer?
+        # Actually I removed create_highpass_filter in replacement, let's implement it locally or skip
+        # Re-implementing logic here for visualization
+        lpf_2ch_hp = self.fft_filter.create_lowpass_filter(shape, cutoff_freq=30)
+        hpf = 1 - lpf_2ch_hp[:,:,0]
+        
         axes[1].imshow(hpf, cmap='gray')
         axes[1].set_title("High-Pass Filter\n(Edge Enhancement)", fontsize=12, fontweight='bold')
         axes[1].axis('off')
         
         # Band-pass filter
-        lpf_high = self.fft_filter.create_lowpass_filter(shape, cutoff_freq=60)
-        lpf_low = self.fft_filter.create_lowpass_filter(shape, cutoff_freq=10)
-        bpf = lpf_high - lpf_low
+        lpf_high_2ch = self.fft_filter.create_lowpass_filter(shape, cutoff_freq=60)
+        lpf_low_2ch = self.fft_filter.create_lowpass_filter(shape, cutoff_freq=10)
+        bpf = lpf_high_2ch[:,:,0] - lpf_low_2ch[:,:,0]
+        
         axes[2].imshow(bpf, cmap='gray')
         axes[2].set_title("Band-Pass Filter\n(Defect Isolation)", fontsize=12, fontweight='bold')
         axes[2].axis('off')

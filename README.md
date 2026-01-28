@@ -148,8 +148,44 @@ We chose a **Classical CV** approach for *Localization* because:
 
 We use **Machine Learning (RF/SVM)** for *Classification* of the localized regions to distinguish between defect types (Scratch vs Particle) based on computed features.
 
-### Python to C++ Transition
-The prototype is developed in Python for rapid iteration. The `preprocess` and `defect_localization` modules are ported to C++ to minimize latency in the "pixel-crunching" stage. The feature extraction and higher-level logic can remain in Python or be ported depending on real-time requirements.
+### Architecture Diagram
+```mermaid
+graph TD
+    A[Raw Wafer Image] --> B{Preprocessing}
+    B -->|Gaussian/Median Filter| C[Noise Reduction]
+    B -->|CLAHE| D[Contrast Enhancement]
+    C --> D
+    D --> E[Defect Localization]
+    E -->|Canny Edge| F[Edge Map]
+    E -->|Morphology| G[ROI Mask]
+    G --> H[Feature Extraction]
+    H -->|Geometric| I[Area/Circularity]
+    H -->|Texture| J[Intensity Stats]
+    I --> K{ML Classifier}
+    J --> K
+    K -->|Random Forest| L[Defect Type]
+    L --> M[Final Report]
+```
+
+## 🏭 Production Considerations
+
+The transition from R&D (Python) to Production (C++) typically involves the following optimizations and safeguards, which have been implemented in the core modules:
+
+### 1. Robustness & Error Handling
+- **Input Validation**: Rigorous checks for empty images, channel counts, and resolution mismatch.
+- **Assertions**: `CV_Assert` used in critical paths to fail fast on invalid states (e.g., incorrect kernel sizes).
+- **Structured Logging**: Standardized logging for traceability of pipeline execution events and errors.
+
+### 2. Performance Profiling
+- **Benchmarking Tools**: Scripts provided (`benchmarks/benchmark_linux.sh`) to measure standard Linux system metrics:
+    - `real`, `user`, `sys` time latency
+    - Peak RSS (Memory)
+    - CPU Utilization
+- **Optimization Path**: Python prototype (~25ms) → C++ Implementation (~5ms) using standard OpenCV optimizations.
+
+### 3. Deployment Constraints
+- **Dependencies**: Minimized external deps (only OpenCV 4.x required).
+- **Frequency Domain**: For high-noise environments, the FFT-based filtering module (`frequency_analysis/`) provides superior noise suppression at the cost of higher compute load compared to spatial filtering.
 
 ## 📊 Performance
 (See `WaferDefectX/benchmarks/` for latest reports)
