@@ -3,7 +3,7 @@
 **WaferDefectX** is an end-to-end computer vision and machine learning pipeline designed for automated inspection of semiconductor wafers. It detects surface defects (scratches, particles) using a hybrid approach of classical computer vision for robust localization and machine learning for classification.
 
 ## 📌 Project Overview
-The system simulates a high-throughput inspection tool found in semiconductor fabs (e.g., KLA/Applied Materials). It is designed with modularity and performance in mind, featuring a Python prototype for R&D and a C++ core for production deployment.
+The system simulates a high-throughput inspection tool found in semiconductor fabs (e.g., Applied Materials). It is designed with modularity and performance in mind, featuring a Python prototype for R&D and a C++ core for production deployment.
 
 ### Key Features
 - **Synthetic Data Generation**: Simulates realistic wafer maps with customizable defects.
