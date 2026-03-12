@@ -58,6 +58,7 @@ The system simulates a high-throughput inspection tool found in semiconductor fa
   - **Localization**: Canny Edge Detection, Morphological Closing (CV).
   - **Feature Extraction**: Geometric (Area, Circularity) + Texture (Mean, StdDev).
   - **Classification**: Random Forest / SVM for defect typing.
+  - **ONNX Inference**: Exported classification models to ONNX format for rapid, cross-platform inference via `onnxruntime`.
 - **Production Readiness**:
   - Modular code structure.
   - C++ implementation of core algorithms (Preprocessing & Localization).
