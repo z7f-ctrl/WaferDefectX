@@ -22,7 +22,8 @@ def main():
     initial_type = [('float_input', FloatTensorType([None, num_features]))]
     
     print("Converting model to ONNX format...")
-    onx = convert_sklearn(model, initial_types=initial_type, target_opset=12)
+    options = {id(model): {'zipmap': False}}
+    onx = convert_sklearn(model, initial_types=initial_type, target_opset=12, options=options)
     
     with open(onnx_model_path, "wb") as f:
         f.write(onx.SerializeToString())

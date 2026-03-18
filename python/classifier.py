@@ -19,8 +19,17 @@ class DefectClassifier:
             self.model = rt.InferenceSession(onnx_path, providers=['CPUExecutionProvider'])
             self.input_name = self.model.get_inputs()[0].name
             self.label_name = self.model.get_outputs()[0].name
+        elif model_type == 'openvino':
+            import openvino as ov
+            if onnx_path is None:
+                raise ValueError("openvino requires onnx_path (path to .xml or .onnx) to load model")
+            core = ov.Core()
+            ov_model = core.read_model(onnx_path)
+            self.model = core.compile_model(ov_model, "CPU")
+            self.output_layer = self.model.output(0)
+            self.classes_ = ['good', 'particle', 'scratch']
         else:
-            raise ValueError("Unknown model type. Choose 'rf', 'svm' or 'onnx'")
+            raise ValueError("Unknown model type. Choose 'rf', 'svm', 'onnx', or 'openvino'")
             
     def train(self, X, y):
         print(f"Training {self.model_type.upper()} classifier...")
@@ -34,6 +43,16 @@ class DefectClassifier:
                 X = X.reshape(1, -1)
             pred = self.model.run([self.label_name], {self.input_name: X})[0]
             return pred
+        elif self.model_type == 'openvino':
+            import numpy as np
+            X = np.array(X, dtype=np.float32)
+            if len(X.shape) == 1:
+                X = X.reshape(1, -1)
+            res = self.model([X])
+            pred_idx = res[self.output_layer][0]
+            if isinstance(pred_idx, np.ndarray):
+                pred_idx = pred_idx.item()
+            return self.classes_[pred_idx]
         return self.model.predict(X)
     
     def evaluate(self, X_test, y_test):
