@@ -2,6 +2,25 @@
 
 **WaferDefectX** is an end-to-end computer vision and machine learning pipeline designed for automated inspection of semiconductor wafers. It detects surface defects (scratches, particles) using a hybrid approach of classical computer vision for robust localization and machine learning for classification.
 
+### Architecture Diagram
+```mermaid
+graph TD
+    A[Raw Wafer Image] --> B{Preprocessing}
+    B -->|Gaussian/Median Filter| C[Noise Reduction]
+    B -->|CLAHE| D[Contrast Enhancement]
+    C --> D
+    D --> E[Defect Localization]
+    E -->|Canny Edge| F[Edge Map]
+    E -->|Morphology| G[ROI Mask]
+    G --> H[Feature Extraction]
+    H -->|Geometric| I[Area/Circularity]
+    H -->|Texture| J[Intensity Stats]
+    I --> K{ML Classifier}
+    J --> K
+    K -->|Random Forest| L[Defect Type]
+    L --> M[Final Report]
+```
+
 ---
 
 ## 🖼️ Results Gallery
@@ -149,25 +168,6 @@ We chose a **Classical CV** approach for *Localization* because:
 - **Data Efficiency**: Does not require thousands of labeled annotations to find simple contrast-based defects.
 
 We use **Machine Learning (RF/SVM)** for *Classification* of the localized regions to distinguish between defect types (Scratch vs Particle) based on computed features.
-
-### Architecture Diagram
-```mermaid
-graph TD
-    A[Raw Wafer Image] --> B{Preprocessing}
-    B -->|Gaussian/Median Filter| C[Noise Reduction]
-    B -->|CLAHE| D[Contrast Enhancement]
-    C --> D
-    D --> E[Defect Localization]
-    E -->|Canny Edge| F[Edge Map]
-    E -->|Morphology| G[ROI Mask]
-    G --> H[Feature Extraction]
-    H -->|Geometric| I[Area/Circularity]
-    H -->|Texture| J[Intensity Stats]
-    I --> K{ML Classifier}
-    J --> K
-    K -->|Random Forest| L[Defect Type]
-    L --> M[Final Report]
-```
 
 ## 🏭 Production Considerations
 
