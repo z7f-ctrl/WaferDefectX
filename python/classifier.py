@@ -5,13 +5,35 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import joblib
 
+# Dependency Inversion: import abstract base so the Factory is type-consistent
+try:
+    from cnn_model import AbstractClassifier, WaferCNN
+    _CNN_AVAILABLE = True
+except ImportError:  # torch not installed — classical-only environment
+    _CNN_AVAILABLE = False
+
+
 class DefectClassifier:
-    def __init__(self, model_type='rf', onnx_path=None):
+    def __init__(self, model_type='rf', onnx_path=None, cnn_path=None):
+        """Factory constructor — Single Responsibility per model branch.
+
+        Parameters
+        ----------
+        model_type : str
+            One of 'rf' | 'svm' | 'onnx' | 'openvino' | 'cnn'
+        onnx_path  : str, optional
+            Path to .onnx or OpenVINO .xml model (for 'onnx'/'openvino').
+        cnn_path   : str, optional
+            Path to WaferCNN .pth weights file (for 'cnn').
+        """
         self.model_type = model_type
+
         if model_type == 'rf':
             self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+
         elif model_type == 'svm':
             self.model = SVC(kernel='rbf', probability=True, random_state=42)
+
         elif model_type == 'onnx':
             import onnxruntime as rt
             if onnx_path is None:
@@ -19,6 +41,7 @@ class DefectClassifier:
             self.model = rt.InferenceSession(onnx_path, providers=['CPUExecutionProvider'])
             self.input_name = self.model.get_inputs()[0].name
             self.label_name = self.model.get_outputs()[0].name
+
         elif model_type == 'openvino':
             import openvino as ov
             if onnx_path is None:
@@ -28,14 +51,33 @@ class DefectClassifier:
             self.model = core.compile_model(ov_model, "CPU")
             self.output_layer = self.model.output(0)
             self.classes_ = ['good', 'particle', 'scratch']
+
+        elif model_type == 'cnn':
+            # Factory Pattern: transparently swap in the PyTorch CNN
+            if not _CNN_AVAILABLE:
+                raise ImportError(
+                    "PyTorch is not installed. Run: pip install torch torchvision "
+                    "--index-url https://download.pytorch.org/whl/cpu"
+                )
+            self.model = WaferCNN()
+            if cnn_path is not None:
+                self.model.load(cnn_path)
+            else:
+                print("[DefectClassifier] CNN initialised with random weights. "
+                      "Pass cnn_path= to load trained weights.")
+
         else:
-            raise ValueError("Unknown model type. Choose 'rf', 'svm', 'onnx', or 'openvino'")
+            raise ValueError("Unknown model type. Choose 'rf', 'svm', 'onnx', 'openvino', or 'cnn'")
             
     def train(self, X, y):
         print(f"Training {self.model_type.upper()} classifier...")
         self.model.fit(X, y)
         
     def predict(self, X):
+        if self.model_type == 'cnn':
+            # X can be: np.ndarray (N,64,64) or torch.Tensor (N,1,64,64)
+            return self.model.predict(X)
+
         if self.model_type == 'onnx':
             import numpy as np
             X = np.array(X, dtype=np.float32)
