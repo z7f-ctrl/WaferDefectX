@@ -15,11 +15,11 @@ Why fp32 for ONNX export (not the quantized .pth)?
   own graph-level optimisations (constant folding, op fusion) which are
   cross-platform and HW-agnostic — ideal for Qualcomm QNN/Hexagon backends.
 
-Usage (from project root):
-    python3 WaferDefectX/python/export_cnn_to_onnx.py
+Usage (from repo root):
+    python3 python/export_cnn_to_onnx.py
 
 Outputs:
-    WaferDefectX/results/cnn_wafer_defect.onnx
+    results/cnn_wafer_defect.onnx
 """
 
 import os
@@ -90,7 +90,7 @@ def main():
     # -----------------------------------------------------------------------
     if not os.path.isfile(MODEL_PATH):
         print(f"\n[ERROR] Trained model not found: {MODEL_PATH}")
-        print("  Run first: python3 WaferDefectX/python/train_cnn.py")
+        print("  Run first: python3 python/train_cnn.py")
         sys.exit(1)
 
     model = WaferCNN()

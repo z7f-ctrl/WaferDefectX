@@ -5,7 +5,7 @@
 | 文档版本 | 1.0 |
 | 关联文档 | [DESIGN.md](./DESIGN.md) |
 | 目标 | 将当前 R&D / Demo 流水线打造成可在产线旁路或边缘工位稳定运行的检测工具 |
-| 状态 | 规划中 |
+| 状态 | P0 已完成（2026-07-19）；P1+ 规划中 |
 | 更新日期 | 2026-07-18 |
 
 ---
@@ -45,24 +45,24 @@ P3  部署增强：服务化、容器、加速与工位开关
 
 ### 3.1 路径与工程结构
 
-- [ ] **P0-01** 统一路径解析：所有脚本改为基于 `__file__` / 项目根目录，去掉对 cwd=`code/` + `WaferDefectX/` 前缀的依赖
-- [ ] **P0-02** 增加 `requirements.txt`（及可选 `requirements-ml.txt`：torch / openvino / hummingbird）
-- [ ] **P0-03** 理顺 C++ 构建：头文件声明 + `.cpp` 单一编译单元；禁止 `main.cpp` `#include "*.cpp"`
-- [ ] **P0-04** 提供一键冒烟脚本（如 `scripts/smoke.sh`）：生成/读样张 → Python demo → 导出校验 → C++ CLI
+- [x] **P0-01** 统一路径解析：所有脚本改为基于 `__file__` / 项目根目录，去掉对 cwd=`code/` + `WaferDefectX/` 前缀的依赖
+- [x] **P0-02** 增加 `requirements.txt`（及可选 `requirements-ml.txt`：torch / openvino / hummingbird）
+- [x] **P0-03** 理顺 C++ 构建：头文件声明 + `.cpp` 单一编译单元；禁止 `main.cpp` `#include "*.cpp"`
+- [x] **P0-04** 提供一键冒烟脚本（如 `scripts/smoke.sh`）：生成/读样张 → Python demo → 导出校验 → C++ CLI
 
 ### 3.2 模型与类别契约
 
-- [ ] **P0-05** OpenVINO / ONNX 路径：`classes_` 从训练产物或旁路元数据加载，禁止写死 `['good','particle','scratch']`
-- [ ] **P0-06** 导出时固化契约：输入名/shape、特征维、类别顺序、特征版本号写入 `*.json` 或模型 metadata
-- [ ] **P0-07** 分类器工厂对缺模型、错 shape、未知 `model_type` 给出明确错误码/信息
+- [x] **P0-05** OpenVINO / ONNX 路径：`classes_` 从训练产物或旁路元数据加载，禁止写死 `['good','particle','scratch']`
+- [x] **P0-06** 导出时固化契约：输入名/shape、特征维、类别顺序、特征版本号写入 `*.json` 或模型 metadata
+- [x] **P0-07** 分类器工厂对缺模型、错 shape、未知 `model_type` 给出明确错误码/信息
 
 ### 3.3 质量门禁
 
-- [ ] **P0-08** 为 Preprocessor / Localizer / FeatureExtractor 增加最少单元测试（空图、单通道、固定样张特征维=7）
-- [ ] **P0-09** CI：安装依赖 → 冒烟 → CMake 构建 C++（macOS/Linux 矩阵可后续扩展）
-- [ ] **P0-10** 文档：README 安装与「从仓库根目录运行」说明与 DESIGN §2.3 对齐
+- [x] **P0-08** 为 Preprocessor / Localizer / FeatureExtractor 增加最少单元测试（空图、单通道、固定样张特征维=7）
+- [x] **P0-09** CI：安装依赖 → 冒烟 → CMake 构建 C++（macOS/Linux 矩阵可后续扩展）
+- [x] **P0-10** 文档：README 安装与「从仓库根目录运行」说明与 DESIGN §2.3 对齐
 
-**P0 退出条件**：新 clone 按 README 可完成冒烟；C++ 干净链接；类别表与导出模型一致；路径错误不再成为默认失败模式。
+**P0 退出条件**：新 clone 按 README 可完成冒烟；C++ 干净链接；类别表与导出模型一致；路径错误不再成为默认失败模式。 ✅（2026-07-19）
 
 ---
 
@@ -157,16 +157,16 @@ P3  部署增强：服务化、容器、加速与工位开关
 
 | ID | Todo | 状态 |
 |----|------|------|
-| P0-01 | 统一 `__file__` 路径 | 待办 |
-| P0-02 | `requirements.txt` | 待办 |
-| P0-03 | C++ 头文件 / 链接结构 | 待办 |
-| P0-04 | 冒烟脚本 | 待办 |
-| P0-05 | 类别表随模型加载 | 待办 |
-| P0-06 | 导出契约 metadata | 待办 |
-| P0-07 | 分类器错误处理硬化 | 待办 |
-| P0-08 | 核心模块单测 | 待办 |
-| P0-09 | CI 冒烟 + C++ 构建 | 待办 |
-| P0-10 | README / 运行约定对齐 | 待办 |
+| P0-01 | 统一 `__file__` 路径 | 完成 |
+| P0-02 | `requirements.txt` | 完成 |
+| P0-03 | C++ 头文件 / 链接结构 | 完成 |
+| P0-04 | 冒烟脚本 | 完成 |
+| P0-05 | 类别表随模型加载 | 完成 |
+| P0-06 | 导出契约 metadata | 完成 |
+| P0-07 | 分类器错误处理硬化 | 完成 |
+| P0-08 | 核心模块单测 | 完成 |
+| P0-09 | CI 冒烟 + C++ 构建 | 完成 |
+| P0-10 | README / 运行约定对齐 | 完成 |
 
 ### P1
 

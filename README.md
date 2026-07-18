@@ -100,13 +100,17 @@ WaferDefectX/
 │   ├── fft_filtering.py    # FFT-based noise suppression
 │   └── spectrum_visualization.py  # Spectrum analysis tools
 ├── cpp/                    # Production Core (C++)
-│   ├── CMakeLists.txt      # Build config
-│   ├── preprocess.cpp      # Optimized CV
-│   ├── defect_localization.cpp # Optimized Localization
-│   └── main.cpp            # C++ Driver
-├── data/                   # Datasets (Synthetic)
-├── results/                # Visualizations & Models
-└── benchmarks/             # Performance reports
+│   ├── CMakeLists.txt
+│   ├── preprocess.hpp/.cpp
+│   ├── defect_localization.hpp/.cpp
+│   └── main.cpp
+├── scripts/smoke.sh        # End-to-end smoke
+├── tests/                  # Unit tests
+├── requirements.txt
+├── PLAN.md                 # Production roadmap
+├── data/
+├── results/
+└── benchmarks/
 ```
 
 ## 🔬 Frequency-Domain Analysis
@@ -117,47 +121,68 @@ Explored **frequency-domain filtering for wafer noise suppression** using FFT-ba
 
 Run frequency analysis:
 ```bash
-cd WaferDefectX/frequency_analysis
-python3 spectrum_visualization.py
+python3 frequency_analysis/spectrum_visualization.py
 ```
 
 ## 🚀 Getting Started
 
+Run all commands from the **repository root** (`WaferDefectX/`). Paths are resolved via `__file__`, so the working directory no longer needs to be the parent folder.
+
 ### Prerequisites
 - Python 3.8+
-- OpenCV (`pip install opencv-python`)
-- NumPy, Pandas, Scikit-Learn, Matplotlib
-- C++ Compiler (GCC/Clang) + CMake + OpenCV C++ DEV Libraries (for C++ core)
+- C++ Compiler (GCC/Clang) + CMake + OpenCV C++ libraries (for C++ core)
+
+```bash
+pip install -r requirements.txt
+# optional: CNN / OpenVINO / Hummingbird
+# pip install -r requirements-ml.txt
+```
+
+### Quick smoke
+```bash
+chmod +x scripts/smoke.sh
+./scripts/smoke.sh
+```
 
 ### 1. Generate Data
-Create synthetic wafer maps for development:
 ```bash
-python3 WaferDefectX/python/data_generator.py
+PYTHONPATH=python python3 python/data_generator.py
 ```
 
 ### 2. Run Python Pipeline
-Visualize the detection steps on sample images:
 ```bash
-python3 WaferDefectX/python/main.py
+PYTHONPATH=python python3 python/main.py
 ```
-Results are saved to `WaferDefectX/results/`.
+Results are saved to `results/`.
 
 ### 3. Train Classifier
-Extract features from the dataset and train a Random Forest model:
 ```bash
-python3 WaferDefectX/python/train_eval.py
+PYTHONPATH=python python3 python/train_eval.py
+```
+Writes `results/rf_model.pkl` and `results/rf_model.meta.json` (classes + feature contract).
+
+### 4. Export ONNX
+```bash
+PYTHONPATH=python python3 python/export_to_onnx.py
 ```
 
-### 4. Build C++ Core
-To compile the high-performance C++ implementation:
+### 5. Build C++ Core
 ```bash
-cd WaferDefectX/cpp
-mkdir build && cd build
-cmake ..
-make
-./WaferDefectX_Run ../../data/synthetic/wafer_0000_particle.png
+cmake -S cpp -B cpp/build
+cmake --build cpp/build
+./cpp/build/WaferDefectX_Run data/synthetic/wafer_0000_particle.png
 ```
 *Note: Ensure `OpenCV_DIR` is set if CMake cannot find OpenCV.*
+
+### Tests
+```bash
+PYTHONPATH=python python3 -m pytest tests -q
+```
+
+### Frequency analysis
+```bash
+python3 frequency_analysis/spectrum_visualization.py
+```
 
 ## 🔬 design Decisions
 
@@ -190,9 +215,12 @@ The transition from R&D (Python) to Production (C++) typically involves the foll
 - **Frequency Domain**: For high-noise environments, the FFT-based filtering module (`frequency_analysis/`) provides superior noise suppression at the cost of higher compute load compared to spatial filtering.
 
 ## 📊 Performance
-(See `WaferDefectX/benchmarks/` for latest reports)
+(See `benchmarks/` for latest reports)
 - **Python Latency**: ~20-30ms per image (resolution dependent).
 - **C++ Latency**: Expected <10ms (environment dependent).
+
+## 🗺️ Roadmap
+Production hardening plan and TODOs: see [PLAN.md](./PLAN.md). Design details: [DESIGN.md](./DESIGN.md).
 
 ## 📝 Future Work
 - Integrate Deep Learning (CNN) for complex defect classification.

@@ -1,0 +1,20 @@
+# C++ build artifacts
+cpp/build/
+
+# Generated outputs
+cpp_result.png
+results/*.png
+results/rf_model.pkl
+results/rf_model.onnx
+results/rf_model.meta.json
+results/ov_model/
+results/cnn_*.pth
+results/*.onnx
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/

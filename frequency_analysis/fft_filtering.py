@@ -162,27 +162,24 @@ class FFTFilter:
 
 if __name__ == "__main__":
     import sys
-    import os
-    # Fix import path for running as script
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'python')))
-    
-    img_path = '../data/synthetic/wafer_0033_scratch.png'
-    # Fallback to absolute if simple relative fails
-    if not os.path.exists(img_path):
-        img_path = 'WaferDefectX/data/synthetic/wafer_0033_scratch.png'
+    from pathlib import Path
 
-    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-    
+    root = Path(__file__).resolve().parents[1]
+    img_path = root / "data" / "synthetic" / "wafer_0033_scratch.png"
+    out_dir = root / "results"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    sys.path.append(str(root / "python"))
+
+    img = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+
     if img is not None:
         fft_filter = FFTFilter()
         denoised = fft_filter.denoise_wafer(img, cutoff=40)
         enhanced = fft_filter.enhance_defects(img, low_cutoff=5, high_cutoff=60)
-        
-        out_dir = '../results' if os.path.isdir('../results') else 'WaferDefectX/results'
-        if not os.path.exists(out_dir): os.makedirs(out_dir)
 
-        cv2.imwrite(os.path.join(out_dir, 'fft_denoised_cv.png'), denoised)
-        cv2.imwrite(os.path.join(out_dir, 'fft_enhanced_cv.png'), enhanced)
+        cv2.imwrite(str(out_dir / "fft_denoised_cv.png"), denoised)
+        cv2.imwrite(str(out_dir / "fft_enhanced_cv.png"), enhanced)
         print("OpenCV FFT filtering complete.")
     else:
         print(f"Test image not found at {img_path}")

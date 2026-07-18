@@ -1,0 +1,6 @@
+# Optional ML / edge deployment extras (install after requirements.txt)
+-r requirements.txt
+torch>=2.0
+torchvision>=0.15
+openvino>=2023.0
+hummingbird-ml>=0.4

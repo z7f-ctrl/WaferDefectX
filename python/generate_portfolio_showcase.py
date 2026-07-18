@@ -2,7 +2,9 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-sys.path.insert(0, 'WaferDefectX/python')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import DATA_SYNTHETIC, RESULTS_DIR, ensure_dir
 
 def generate_visible_defect_wafer():
     """Generate a wafer with clearly visible defects"""
@@ -110,7 +112,7 @@ def create_final_linkedin_image1():
     plt.suptitle("WaferDefectX: Real-time Semiconductor Defect Detection", 
                  fontsize=22, fontweight='bold', y=0.98)
     plt.tight_layout(rect=[0, 0.05, 1, 0.95])
-    plt.savefig("WaferDefectX/results/linkedin_final_detection.png", dpi=150, bbox_inches='tight', 
+    plt.savefig(str(RESULTS_DIR / "linkedin_final_detection.png"), dpi=150, bbox_inches='tight', 
                 facecolor='white', edgecolor='none')
     plt.close()
     print("Saved: linkedin_final_detection.png")
@@ -195,12 +197,13 @@ def create_final_linkedin_image2():
     
     plt.suptitle("WaferDefectX: End-to-End Defect Classification Pipeline", fontsize=18, fontweight='bold')
     plt.tight_layout()
-    plt.savefig("WaferDefectX/results/linkedin_final_pipeline.png", dpi=150, bbox_inches='tight',
+    plt.savefig(str(RESULTS_DIR / "linkedin_final_pipeline.png"), dpi=150, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close()
     print("Saved: linkedin_final_pipeline.png")
 
 if __name__ == "__main__":
+    ensure_dir(RESULTS_DIR)
     create_final_linkedin_image1()
     create_final_linkedin_image2()
     print("\nFinal LinkedIn images ready!")

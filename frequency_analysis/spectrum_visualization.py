@@ -141,20 +141,28 @@ class SpectrumVisualizer:
 
 
 if __name__ == "__main__":
-    # Generate visualization for wafer image
-    img = cv2.imread('../data/synthetic/wafer_0033_scratch.png', cv2.IMREAD_GRAYSCALE)
-    
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    img_path = root / "data" / "synthetic" / "wafer_0033_scratch.png"
+    out_dir = root / "results"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    img = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+
     if img is not None:
         viz = SpectrumVisualizer()
-        
-        # Generate visualizations
-        viz.plot_spectrum(img, title="Wafer Image Frequency Analysis",
-                         save_path='../results/spectrum_analysis.png')
-        
-        viz.plot_filter_comparison(img, save_path='../results/fft_filter_comparison.png')
-        
-        viz.plot_filter_response(save_path='../results/filter_responses.png')
-        
+
+        viz.plot_spectrum(
+            img,
+            title="Wafer Image Frequency Analysis",
+            save_path=str(out_dir / "spectrum_analysis.png"),
+        )
+        viz.plot_filter_comparison(
+            img, save_path=str(out_dir / "fft_filter_comparison.png")
+        )
+        viz.plot_filter_response(save_path=str(out_dir / "filter_responses.png"))
+
         print("Spectrum visualizations complete!")
     else:
-        print("Could not load test image.")
+        print(f"Could not load test image at {img_path}.")

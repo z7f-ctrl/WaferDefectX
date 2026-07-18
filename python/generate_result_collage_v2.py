@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-sys.path.insert(0, 'WaferDefectX/python')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import DATA_SYNTHETIC, RESULTS_DIR, ensure_dir
 
 from preprocessing import Preprocessor
 from defect_localization import DefectLocalizer
@@ -103,14 +105,14 @@ def create_linkedin_image1_improved():
     
     plt.suptitle("WaferDefectX: Real-time Defect Detection System", fontsize=20, fontweight='bold', y=0.98)
     plt.tight_layout()
-    plt.savefig("WaferDefectX/results/linkedin_image1_detection_v2.png", dpi=150, bbox_inches='tight', 
+    plt.savefig(str(RESULTS_DIR / "linkedin_image1_detection_v2.png"), dpi=150, bbox_inches='tight', 
                 facecolor='white', edgecolor='none')
     plt.close()
     print("Saved: linkedin_image1_detection_v2.png")
     
     # Also save just the detection result
-    cv2.imwrite("WaferDefectX/results/demo_wafer_original.png", image)
-    cv2.imwrite("WaferDefectX/results/demo_wafer_detected.png", output_img)
+    cv2.imwrite(str(RESULTS_DIR / "demo_wafer_original.png"), image)
+    cv2.imwrite(str(RESULTS_DIR / "demo_wafer_detected.png"), output_img)
 
 def create_linkedin_image2_improved():
     """Create feature extraction pipeline with visible defects"""
@@ -191,12 +193,13 @@ def create_linkedin_image2_improved():
     ax6.axis('off')
     
     plt.suptitle("WaferDefectX: Feature-based Defect Classification Pipeline", fontsize=16, fontweight='bold')
-    plt.savefig("WaferDefectX/results/linkedin_image2_pipeline_v2.png", dpi=150, bbox_inches='tight',
+    plt.savefig(str(RESULTS_DIR / "linkedin_image2_pipeline_v2.png"), dpi=150, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close()
     print("Saved: linkedin_image2_pipeline_v2.png")
 
 if __name__ == "__main__":
+    ensure_dir(RESULTS_DIR)
     create_linkedin_image1_improved()
     create_linkedin_image2_improved()
     print("\nImproved LinkedIn images created!")

@@ -1,11 +1,12 @@
-#include "defect_localization.cpp"
-#include "preprocess.cpp"
+#include "defect_localization.hpp"
+#include "preprocess.hpp"
+
 #include <chrono>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <stdexcept>
+#include <string>
 
-// Simple structured logging helper
 void log_info(const std::string &msg) {
   std::cout << "[INFO] " << msg << std::endl;
 }
@@ -35,31 +36,25 @@ int main(int argc, char **argv) {
     log_info("Image loaded successfully. Resolution: " +
              std::to_string(image.cols) + "x" + std::to_string(image.rows));
 
-    // Initialize modules
     Preprocessor preprocessor;
     DefectLocalizer localizer;
 
-    // Start Timer
     auto start = std::chrono::high_resolution_clock::now();
 
-    // 1. Preprocess
     log_info("Running Preprocessing (Blur, CLAHE)...");
     cv::Mat enhanced = preprocessor.process(image);
 
-    // 2. Localize
     log_info("Running Localization (Canny, Morphology, Contours)...");
     DefectResult result = localizer.localized(enhanced);
 
-    // End Timer
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> float_ms = end - start;
 
     std::cout << "Processing Time: " << float_ms.count() << " ms" << std::endl;
     std::cout << "Defects Found: " << result.contours.size() << std::endl;
 
-    // Save result for verification
     cv::Mat output = image.clone();
-    for (size_t i = 0; i < result.contours.size(); i++) {
+    for (size_t i = 0; i < result.bboxes.size(); i++) {
       cv::rectangle(output, result.bboxes[i], cv::Scalar(0, 0, 255), 2);
     }
 

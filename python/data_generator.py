@@ -72,7 +72,8 @@ class WaferDataGenerator:
         print("Done.")
 
 if __name__ == "__main__":
-    # Assuming running from project root
-    output_dir = os.path.join(os.getcwd(), "WaferDefectX/data/synthetic")
+    from paths import DATA_SYNTHETIC, ensure_dir
+
+    output_dir = str(ensure_dir(DATA_SYNTHETIC))
     generator = WaferDataGenerator(output_dir=output_dir)
     generator.generate_dataset(num_images=50)

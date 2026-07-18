@@ -114,7 +114,7 @@ WaferDefectX/
 
 ### 2.3 运行时路径约定
 
-多数 Python 脚本硬编码相对路径前缀 `WaferDefectX/...`，约定**工作目录为仓库父目录**（例如 `code/`），而非仓库根目录。CNN 相关脚本（`train_cnn.py`、`export_cnn_to_onnx.py`）使用基于 `__file__` 的相对路径，可从仓库内更稳健地运行。
+所有脚本通过 `python/paths.py` 基于 `__file__` 解析项目根目录。约定**从仓库根目录运行**（例如 `PYTHONPATH=python python3 python/main.py`）。详见 `scripts/smoke.sh` 与 README Getting Started。
 
 ---
 
@@ -590,12 +590,12 @@ WaferDefectX_Run <image_path>                      // CLI
 
 ## 15. 风险与局限
 
-1. **路径硬编码**：多数脚本依赖 `WaferDefectX/` 前缀工作目录，易在错误 cwd 下失败。
-2. **无自动化测试**：回归依赖人工冒烟与视觉检查。
+1. ~~**路径硬编码**~~：已用 `python/paths.py` 统一（见 PLAN P0-01）。
+2. ~~**无自动化测试**~~：已有 `tests/` + CI（见 PLAN P0-08/09）。
 3. **训练标签噪声**：`good` 图上若定位出噪声轮廓，可能进入训练集（当前逻辑对 good 基本 `pass` 跳过，但缺陷图多轮廓只取最大，可能丢次要缺陷）。
 4. **CNN 与 CV 路径不一致**：CNN 用整图 64×64，非 localized ROI。
-5. **C++ include .cpp**：存在重复编译/链接风险，工程结构待整理。
-6. **OpenVINO 类别表写死**：`classifier.py` 中 `classes_` 与实际训练集类别顺序可能不一致，部署前需校验。
+5. ~~**C++ include .cpp**~~：已改为头文件 + `wafer_core` 库（见 PLAN P0-03）。
+6. ~~**OpenVINO 类别表写死**~~：改为 `*.meta.json` 契约加载（见 PLAN P0-05/06）。
 
 ---
 

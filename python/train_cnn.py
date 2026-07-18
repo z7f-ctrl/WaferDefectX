@@ -10,11 +10,11 @@ Steps:
   6. Save both checkpoints
 
 Usage (from project root):
-    python3 WaferDefectX/python/train_cnn.py
+    python3 python/train_cnn.py   # from repo root
 
 Outputs:
-    WaferDefectX/results/cnn_wafer_model.pth           <- fp32 weights
-    WaferDefectX/results/cnn_wafer_model_quantized.pth <- int8 quantized
+    results/cnn_wafer_model.pth           <- fp32 weights
+    results/cnn_wafer_model_quantized.pth <- int8 quantized
 """
 
 import os
@@ -83,7 +83,7 @@ def train():
     data_dir = os.path.abspath(DATA_DIR)
     if not os.path.isdir(data_dir):
         print(f"\n[ERROR] Data directory not found: {data_dir}")
-        print("  Run: python3 WaferDefectX/python/data_generator.py")
+        print("  Run: python3 python/data_generator.py")
         sys.exit(1)
 
     dataset = WaferPatchDataset(data_dir)
@@ -226,7 +226,7 @@ def train():
     print("=" * 60)
 
     print("\n✅ All done. Next step:")
-    print("   python3 WaferDefectX/python/export_cnn_to_onnx.py")
+    print("   python3 python/export_cnn_to_onnx.py")
 
 
 if __name__ == "__main__":

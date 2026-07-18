@@ -3,7 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-sys.path.insert(0, 'WaferDefectX/python')
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import DATA_SYNTHETIC, RESULTS_DIR, ensure_dir
 
 from preprocessing import Preprocessor
 from defect_localization import DefectLocalizer
@@ -12,7 +15,7 @@ from features import FeatureExtractor
 def create_linkedin_image1():
     """Create before/after defect detection image"""
     # Load a scratch image for more visual impact
-    img_path = "WaferDefectX/data/synthetic/wafer_0033_scratch.png"
+    img_path = str(DATA_SYNTHETIC / "wafer_0033_scratch.png")
     image = cv2.imread(img_path)
     
     preprocessor = Preprocessor()
@@ -41,14 +44,14 @@ def create_linkedin_image1():
     
     plt.suptitle("WaferDefectX: Real-time Defect Detection", fontsize=20, fontweight='bold', y=1.02)
     plt.tight_layout()
-    plt.savefig("WaferDefectX/results/linkedin_image1_detection.png", dpi=150, bbox_inches='tight', 
+    plt.savefig(str(RESULTS_DIR / "linkedin_image1_detection.png"), dpi=150, bbox_inches='tight', 
                 facecolor='white', edgecolor='none')
     plt.close()
-    print("Saved: linkedin_image1_detection.png")
+    print("Saved: results/linkedin_image1_detection.png")
 
 def create_linkedin_image2():
     """Create feature extraction / classification pipeline visualization"""
-    img_path = "WaferDefectX/data/synthetic/wafer_0019_particle.png"
+    img_path = str(DATA_SYNTHETIC / "wafer_0019_particle.png")
     image = cv2.imread(img_path)
     
     preprocessor = Preprocessor()
@@ -103,10 +106,10 @@ def create_linkedin_image2():
     
     plt.suptitle("WaferDefectX: Feature-based Classification Pipeline", fontsize=18, fontweight='bold')
     plt.tight_layout()
-    plt.savefig("WaferDefectX/results/linkedin_image2_pipeline.png", dpi=150, bbox_inches='tight',
+    plt.savefig(str(RESULTS_DIR / "linkedin_image2_pipeline.png"), dpi=150, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close()
-    print("Saved: linkedin_image2_pipeline.png")
+    print("Saved: results/linkedin_image2_pipeline.png")
 
 def create_linkedin_image3():
     """Create performance benchmark chart"""
@@ -149,13 +152,14 @@ def create_linkedin_image3():
     
     plt.suptitle("WaferDefectX: Python vs C++ Performance Benchmarking", fontsize=16, fontweight='bold')
     plt.tight_layout()
-    plt.savefig("WaferDefectX/results/linkedin_image3_benchmark.png", dpi=150, bbox_inches='tight',
+    plt.savefig(str(RESULTS_DIR / "linkedin_image3_benchmark.png"), dpi=150, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close()
-    print("Saved: linkedin_image3_benchmark.png")
+    print("Saved: results/linkedin_image3_benchmark.png")
 
 if __name__ == "__main__":
+    ensure_dir(RESULTS_DIR)
     create_linkedin_image1()
     create_linkedin_image2()
     create_linkedin_image3()
-    print("\nAll LinkedIn images created in WaferDefectX/results/")
+    print(f"\nAll LinkedIn images created in {RESULTS_DIR}")
