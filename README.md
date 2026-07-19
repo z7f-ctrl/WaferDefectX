@@ -1,232 +1,208 @@
-# WaferDefectX: Production-Grade Wafer Defect Detection
+# WaferDefectX: Semiconductor Wafer Defect Detection
 
-**WaferDefectX** is an end-to-end computer vision and machine learning pipeline designed for automated inspection of semiconductor wafers. It detects surface defects (scratches, particles) using a hybrid approach of classical computer vision for robust localization and machine learning for classification.
+**WaferDefectX** is an end-to-end computer vision and machine learning pipeline for automated inspection of semiconductor wafers. It detects surface defects (scratches, particles) using classical computer vision for robust localization and a ResNet-18 CNN for classification.
 
-### Architecture Diagram
+**Status**: Production-ready | **Accuracy**: 93.83% on WM-811K | **End-to-end Latency**: 12–19ms (C++)
+
+---
+
+## Architecture
+
 ```mermaid
 graph TD
     A[Raw Wafer Image] --> B{Preprocessing}
-    B -->|Gaussian/Median Filter| C[Noise Reduction]
+    B -->|Gaussian/Median| C[Noise Reduction]
     B -->|CLAHE| D[Contrast Enhancement]
     C --> D
     D --> E[Defect Localization]
     E -->|Canny Edge| F[Edge Map]
     E -->|Morphology| G[ROI Mask]
-    G --> H[Feature Extraction]
-    H -->|Geometric| I[Area/Circularity]
-    H -->|Texture| J[Intensity Stats]
-    I --> K{ML Classifier}
-    J --> K
-    K -->|Random Forest| L[Defect Type]
-    L --> M[Final Report]
+    G --> H[BBox Crop]
+    H -->|64x64 Grayscale| I{Classifier}
+    I -->|RF + 7-dim| J[Random Forest]
+    I -->|ResNet-18| K[CNN ROI]
+    J --> L[Defect Type]
+    K --> L
+    L --> M[JSON Report]
 ```
 
 ---
 
-## 🖼️ Results Gallery
+## Results
 
-### 1. Real-time Defect Detection
-*Automated localization of surface defects with multi-class classification (Scratch, Particle, Void)*
+### Accuracy Comparison (WM-811K, 5,193 samples)
 
-![Defect Detection Output](results/wafer_defect_detection_before_after.png)
+| Model | Accuracy | scratch Recall | Macro F1 | Latency |
+|-------|----------|---------------|----------|---------|
+| RF + 7-dim features | 70.09% | 44% | 0.67 | ~7ms |
+| **ResNet-18 ROI** | **93.83%** | **90%** | **0.93** | **12–19ms** |
 
----
+### Per-class Breakdown (ResNet-18)
 
-### 2. End-to-End Classification Pipeline
-*6-stage processing pipeline: Input → CLAHE → Edge Detection → Morphology → Feature Extraction → Classification*
+| Class | Precision | Recall | F1 | Support |
+|-------|-----------|--------|----|---------|
+| good | 0.94 | 0.95 | 0.94 | 300 |
+| particle | 0.95 | 0.95 | 0.95 | 315 |
+| scratch | 0.91 | 0.90 | 0.91 | 163 |
 
-![Classification Pipeline](results/defect_classification_pipeline.png)
+### C++ End-to-end Latency
 
----
-
-### 3. Python vs C++ Performance Benchmark
-*Latency comparison showing 4x speedup with C++ implementation (8.6ms → 2.1ms)*
-
-![Performance Benchmark](results/python_cpp_performance_benchmark.png)
-
----
-
-### 4. Frequency-Domain Noise Suppression
-*FFT-based filtering for wafer noise removal: Original vs Low-Pass vs Band-Pass filtered*
-
-![FFT Filter Comparison](results/fft_filter_comparison.png)
+| Component | Time |
+|-----------|------|
+| Preprocess + Localize + Features | ~6ms |
+| ONNX Runtime Classification | ~1ms |
+| **Total** | **12–19ms** |
 
 ---
 
-### 5. Filter Frequency Responses
-*Visualization of Low-Pass, High-Pass, and Band-Pass filter masks in frequency domain*
-
-![Filter Responses](results/filter_responses.png)
-
----
-
-### 6. Spectrum Analysis
-*Spatial vs Frequency domain representation of wafer images*
-
-![Spectrum Analysis](results/spectrum_analysis.png)
-
----
-
-## 📌 Project Overview
-The system simulates a high-throughput inspection tool found in semiconductor fabs (e.g., Applied Materials). It is designed with modularity and performance in mind, featuring a Python prototype for R&D and a C++ core for production deployment.
-
-### Key Features
-- **Synthetic Data Generation**: Simulates realistic wafer maps with customizable defects.
-- **Hybrid Pipeline**:
-  - **Preprocessing**: Gaussian/Median filtering, CLAHE, Adaptive Thresholding.
-  - **Localization**: Canny Edge Detection, Morphological Closing (CV).
-  - **Feature Extraction**: Geometric (Area, Circularity) + Texture (Mean, StdDev).
-  - **Classification**: Random Forest / SVM for defect typing.
-  - **ONNX Inference**: Exported classification models to ONNX format for rapid, cross-platform inference via `onnxruntime`.
-  - **OpenVINO Optimization**: Enabled Intel OpenVINO inference via `hummingbird-ml` conversion for maximized hardware acceleration.
-- **Production Readiness**:
-  - Modular code structure.
-  - C++ implementation of core algorithms (Preprocessing & Localization).
-  - CMake build system.
-
-## 📂 Repository Structure
-```
-WaferDefectX/
-├── python/                 # R&D Prototype
-│   ├── data_generator.py   # Synthetic data creation
-│   ├── preprocessing.py    # CV Filters
-│   ├── defect_localization.py # ROI & Mask generation
-│   ├── features.py         # Feature engineering
-│   ├── classifier.py       # ML Model wrappers
-│   ├── main.py             # Driver for visualization
-│   ├── train_eval.py       # ML Training pipeline
-│   └── benchmark.py        # Performance testing
-├── frequency_analysis/     # Frequency-Domain Processing
-│   ├── fft_filtering.py    # FFT-based noise suppression
-│   └── spectrum_visualization.py  # Spectrum analysis tools
-├── cpp/                    # Production Core (C++)
-│   ├── CMakeLists.txt
-│   ├── preprocess.hpp/.cpp
-│   ├── defect_localization.hpp/.cpp
-│   └── main.cpp
-├── scripts/smoke.sh        # End-to-end smoke
-├── tests/                  # Unit tests
-├── requirements.txt
-├── PLAN.md                 # Production roadmap
-├── data/
-├── results/
-└── benchmarks/
-```
-
-## 🔬 Frequency-Domain Analysis
-Explored **frequency-domain filtering for wafer noise suppression** using FFT-based techniques:
-- **Low-Pass Filtering**: Removes high-frequency sensor noise while preserving defect structures
-- **Band-Pass Filtering**: Isolates defect-relevant spatial frequencies for enhanced detection
-- **Spectrum Visualization**: Analyzes frequency characteristics of wafer images and defects
-
-Run frequency analysis:
-```bash
-python3 frequency_analysis/spectrum_visualization.py
-```
-
-## 🚀 Getting Started
-
-Run all commands from the **repository root** (`WaferDefectX/`). Paths are resolved via `__file__`, so the working directory no longer needs to be the parent folder.
+## Quick Start
 
 ### Prerequisites
-- Python 3.8+
-- C++ Compiler (GCC/Clang) + CMake + OpenCV C++ libraries (for C++ core)
+
+- Python 3.8+, OpenCV
+- C++17 compiler, CMake 3.10+, OpenCV C++, ONNX Runtime
 
 ```bash
 pip install -r requirements.txt
-# optional: CNN / OpenVINO / Hummingbird
-# pip install -r requirements-ml.txt
 ```
 
-### Quick smoke
+### Smoke Test
+
 ```bash
-chmod +x scripts/smoke.sh
-./scripts/smoke.sh
+bash scripts/smoke.sh
 ```
 
-### 1. Generate Data
+### End-to-end C++ Pipeline (with classification)
+
 ```bash
-PYTHONPATH=python python3 python/data_generator.py
+cmake -S cpp -B cpp/build && cmake --build cpp/build
+
+# Without classifier (preprocess + localize + features only)
+./cpp/build/WaferDefectX_Run data/wm811k/images/wafer_00002_good.png
+
+# With CNN classifier
+./cpp/build/WaferDefectX_Run --model results/wafer_resnet18_roi.onnx data/wm811k/images/wafer_00002_good.png
+
+# JSON output
+./cpp/build/WaferDefectX_Run --json --model results/wafer_resnet18_roi.onnx data/wm811k/images/wafer_00002_good.png
 ```
 
-### 2. Run Python Pipeline
+### Train CNN Classifier
+
 ```bash
-PYTHONPATH=python python3 python/main.py
+PYTHONPATH=python python3 python/train_roi_cnn.py
 ```
-Results are saved to `results/`.
 
-### 3. Train Classifier
+Trains ResNet-18 on WM-811K ROI patches. Outputs:
+- `results/wafer_resnet18_roi.pth` — FP32 weights (42.7 MB)
+- `results/wafer_resnet18_roi.onnx` — ONNX export (42.6 MB)
+- `results/roi_cnn_eval_metrics.json` — evaluation metrics
+
+### Train RF Classifier (classical CV)
+
 ```bash
 PYTHONPATH=python python3 python/train_eval.py
 ```
-Writes `results/rf_model.pkl` and `results/rf_model.meta.json` (classes + feature contract).
 
-### 4. Export ONNX
+### Run Unit Tests
+
 ```bash
-PYTHONPATH=python python3 python/export_to_onnx.py
+PYTHONPATH=python python3 -m pytest tests -v
 ```
-
-### 5. Build C++ Core
-```bash
-cmake -S cpp -B cpp/build
-cmake --build cpp/build
-./cpp/build/WaferDefectX_Run data/synthetic/wafer_0000_particle.png
-```
-*Note: Ensure `OpenCV_DIR` is set if CMake cannot find OpenCV.*
-
-### Tests
-```bash
-PYTHONPATH=python python3 -m pytest tests -q
-```
-
-### Frequency analysis
-```bash
-python3 frequency_analysis/spectrum_visualization.py
-```
-
-## 🔬 design Decisions
-
-### Classical CV vs Deep Learning
-We chose a **Classical CV** approach for *Localization* because:
-- **Speed**: Simple filtering and thresholding is orders of magnitude faster than a YOLO inference, crucial for high-throughput (WPH) inspection.
-- **Interpretability**: Morphological operations provide clear, explainable boundaries compared to black-box neural networks.
-- **Data Efficiency**: Does not require thousands of labeled annotations to find simple contrast-based defects.
-
-We use **Machine Learning (RF/SVM)** for *Classification* of the localized regions to distinguish between defect types (Scratch vs Particle) based on computed features.
-
-## 🏭 Production Considerations
-
-The transition from R&D (Python) to Production (C++) typically involves the following optimizations and safeguards, which have been implemented in the core modules:
-
-### 1. Robustness & Error Handling
-- **Input Validation**: Rigorous checks for empty images, channel counts, and resolution mismatch.
-- **Assertions**: `CV_Assert` used in critical paths to fail fast on invalid states (e.g., incorrect kernel sizes).
-- **Structured Logging**: Standardized logging for traceability of pipeline execution events and errors.
-
-### 2. Performance Profiling
-- **Benchmarking Tools**: Scripts provided (`benchmarks/benchmark_linux.sh`) to measure standard Linux system metrics:
-    - `real`, `user`, `sys` time latency
-    - Peak RSS (Memory)
-    - CPU Utilization
-- **Optimization Path**: Python prototype (~25ms) → C++ Implementation (~5ms) using standard OpenCV optimizations.
-
-### 3. Deployment Constraints
-- **Dependencies**: Minimized external deps (only OpenCV 4.x required).
-- **Frequency Domain**: For high-noise environments, the FFT-based filtering module (`frequency_analysis/`) provides superior noise suppression at the cost of higher compute load compared to spatial filtering.
-
-## 📊 Performance
-(See `benchmarks/` for latest reports)
-- **Python Latency**: ~20-30ms per image (resolution dependent).
-- **C++ Latency**: Expected <10ms (environment dependent).
-
-## 🗺️ Roadmap
-Production hardening plan and TODOs: see [PLAN.md](./PLAN.md). Design details: [DESIGN.md](./DESIGN.md).
-
-## 📝 Future Work
-- Integrate Deep Learning (CNN) for complex defect classification.
-- Support real WM-811K dataset parsing.
-- Implement multi-threading/CUDA optimization in C++.
 
 ---
+
+## Repository Structure
+
+```
+WaferDefectX/
+├── python/                     # Python modules
+│   ├── wafer_resnet.py         # ResNet-18 model
+│   ├── roi_dataset.py          # ROI patch dataset (bbox → 64x64)
+│   ├── train_roi_cnn.py        # CNN training script
+│   ├── train_eval.py           # RF training pipeline
+│   ├── classifier.py           # RF/SVM/ONNX/OpenVINO wrappers
+│   ├── dataset_parser.py       # WM-811K + generic parsers
+│   ├── main.py                 # Demo driver
+│   └── benchmark.py            # Performance testing
+├── cpp/                        # C++ production core
+│   ├── CMakeLists.txt
+│   ├── preprocess.hpp/.cpp
+│   ├── defect_localization.hpp/.cpp
+│   ├── feature_extraction.hpp/.cpp
+│   ├── onnx_classifier.hpp/.cpp # ONNX Runtime integration
+│   └── main.cpp                # End-to-end CLI
+├── tests/                      # Unit tests (13/13 passing)
+├── scripts/
+│   └── smoke.sh                # End-to-end smoke test
+├── data/
+│   ├── synthetic/              # 79 synthetic images
+│   └── wm811k/                 # WM-811K (5,193 images + labels)
+├── results/                    # Model outputs + metrics
+├── EVAL_PROTOCOL.md            # Evaluation rules
+├── EVAL_BASELINE.md            # Baseline metrics report
+├── TEST_REPORT.md              # Full test report
+├── DESIGN.md                   # Architecture docs
+├── PLAN.md                     # Production roadmap
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## Design Decisions
+
+### Localization: Classical CV
+
+We use classical computer vision for defect localization because:
+- **Speed**: Filtering + thresholding is orders of magnitude faster than YOLO, critical for high-throughput inspection
+- **Interpretability**: Morphological operations provide clear, explainable boundaries
+- **Data Efficiency**: No labeled annotations needed for contrast-based defect finding
+
+### Classification: ResNet-18 ROI
+
+We use a ResNet-18 CNN for defect classification because:
+- **93.83% accuracy** vs 70% with RF on WM-811K
+- **scratch recall 90%** vs 44% with RF — critical for production
+- **ONNX export** enables C++ deployment via ONNX Runtime (12–19ms end-to-end)
+
+### Deployment Topology
+
+In-process C++ pipeline (per ADR-5):
+```
+Sensor → C++ preprocess → C++ localize → C++ features → ONNX Runtime classify → Result
+```
+
+---
+
+## Test Results
+
+| Test Type | Result |
+|-----------|--------|
+| Unit tests (pytest) | **13/13** passed |
+| Smoke tests | **5/5** passed |
+| C++ compile | **0** warnings |
+| C++/Python alignment | **<0.01** max difference |
+| CNN test accuracy | **93.83%** (target: 90%) |
+
+Full details: [TEST_REPORT.md](./TEST_REPORT.md)
+
+---
+
+## Roadmap
+
+| Phase | Status |
+|-------|--------|
+| P0 — Engineering foundation | ✅ Complete |
+| P1 — Production pipeline | ✅ Complete |
+| M3a — CNN ROI classifier | ✅ Complete |
+| C++ ONNX Runtime integration | ✅ Complete |
+| Full dataset training (172K) | Pending |
+| Multi-threading / CUDA | Future |
+
+See [PLAN.md](./PLAN.md) for details. Design docs: [DESIGN.md](./DESIGN.md).
+
+---
+
 **Author**: Ashik Sharon M
-**Date**: Jan 2026
+**Last updated**: Jul 2026
