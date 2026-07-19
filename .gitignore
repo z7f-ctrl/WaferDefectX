@@ -9,6 +9,7 @@ results/rf_model.onnx
 results/rf_model.meta.json
 results/ov_model/
 results/cnn_*.pth
+results/wafer_resnet18_*.pth
 results/*.onnx
 results/eval_metrics.json
 results/eval_predictions.csv
