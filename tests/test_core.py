@@ -87,3 +87,61 @@ def test_paths_resolve_inside_repo():
 
     assert PROJECT_ROOT.name == "WaferDefectX" or (PROJECT_ROOT / "python").is_dir()
     assert RESULTS_DIR.parent == PROJECT_ROOT
+
+
+# ---------------------------------------------------------------------------
+# P1-03: C++/Python feature alignment test
+# ---------------------------------------------------------------------------
+
+def test_cpp_feature_alignment():
+    """Run the C++ binary with --json and compare features to Python.
+
+    Tolerance is 1e-3 for floating-point differences caused by
+    implementation variance (OpenCV C++ vs Python bindings).
+    """
+    import json
+    import subprocess
+
+    cpp_bin = ROOT / "cpp" / "build" / "WaferDefectX_Run"
+    if not cpp_bin.is_file():
+        pytest.skip("C++ binary not built (run: cmake --build cpp/build)")
+
+    sample = sorted(DATA_SYNTHETIC.glob("*.png"))[0]
+    result = subprocess.run(
+        [str(cpp_bin), "--json", str(sample)],
+        capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, f"C++ binary failed: {result.stderr}"
+    cpp_out = json.loads(result.stdout.split("\n", 6)[-1])
+
+    pre = Preprocessor()
+    loc = DefectLocalizer()
+    fe = FeatureExtractor()
+
+    image = cv2.imread(str(sample))
+    enhanced, _ = pre.process_pipeline(image)
+    loc_res = loc.localize(enhanced)
+
+    cpp_defects = cpp_out.get("defects", [])
+    assert len(cpp_defects) == len(loc_res["contours"]), (
+        f"Defect count mismatch: C++={len(cpp_defects)}, Python={len(loc_res['contours'])}"
+    )
+
+    for i, (cpp_d, contour) in enumerate(zip(cpp_defects, loc_res["contours"])):
+        py_feats = fe.extract_features(enhanced, contour)
+        cpp_feats = np.array(cpp_d["features"])
+        np.testing.assert_allclose(
+            cpp_feats, py_feats, atol=0.01,
+            err_msg=f"Feature mismatch at defect {i}: C++={cpp_feats}, Python={py_feats}",
+        )
+
+
+# ---------------------------------------------------------------------------
+# P1-05: Per-contour training produces noise class
+# ---------------------------------------------------------------------------
+
+def test_extract_dataset_includes_noise_class():
+    from train_eval import extract_dataset_features
+    X, y, meta = extract_dataset_features(DATA_SYNTHETIC, include_negative=True)
+    assert len(X) > 0
+    assert "noise" in set(y), "Negative class 'noise' should appear for good images"

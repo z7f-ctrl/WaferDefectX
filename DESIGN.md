@@ -379,8 +379,8 @@ cmake .. && make
 |------|--------|-----|
 | 预处理 | ✓ | ✓ |
 | 定位 | ✓ | ✓ |
-| 特征提取 | ✓ | ✗ |
-| 分类 / ONNX | ✓ | ✗ |
+| 特征提取 | ✓ | ✓ |
+| 分类 / ONNX | ✓ | ✗（P2） |
 | 频域 | ✓ | ✗ |
 
 生产完整链路需后续将特征 + ONNX Runtime / OpenVINO C++ API 接入，或采用「C++ 定位 + 外部推理服务」拆分部署。
@@ -586,13 +586,30 @@ WaferDefectX_Run <image_path>                      // CLI
 - **决策**：内置生成器支撑全流程开发。
 - **后果**：指标不可直接外推到真实晶圆；需后续接入 WM-811K 等真实集。
 
+### ADR-5：端到端部署拓扑——进程内全链路（选项 A）
+
+- **背景**：P1 需要确定 C++ 生产路径的端到端拓扑。两个候选：
+  - A（进程内）：C++ 预处理 + 定位 + 特征 + ONNX Runtime 推理
+  - B（拆分）：C++ 定位 → 结构化 ROI → 独立推理服务
+- **决策**：采用**选项 A（进程内全链路）**，理由：
+  1. 最低延迟：无 IPC / 序列化开销，满足高 WPH 要求
+  2. 最简运维：单一二进制，无服务发现 / 健康检查依赖
+  3. 部署灵活：可在工位本地运行，也可被容器/服务封装
+  4. 当前 C++ 已覆盖预处理+定位，补全特征+ONNX Runtime 自然演进
+- **后果**：
+  - C++ 二进制需链接 ONNX Runtime C++ API（~30MB 动态库）
+  - 特征提取需 C++ 复刻并与 Python 数值对齐（P1-03）
+  - 后续若需 GPU/CNN 推理，可保持同一拓扑接入 ONNX Runtime GPU 后端
+- **放弃选项 B 的原因**：增加网络/序列化延迟；引入推理服务的可用性风险；对单工位场景过度设计
+- **实现路径**：CMakeLists.txt 新增 `find_package(onnxruntime)` + `target_link_libraries(WaferDefectX_Run PRIVATE onnxruntime)`；`feature_extraction.hpp/.cpp` + `inference.hpp/.cpp`；`main.cpp` 串联全流程并输出 JSON
+
 ---
 
 ## 15. 风险与局限
 
 1. ~~**路径硬编码**~~：已用 `python/paths.py` 统一（见 PLAN P0-01）。
 2. ~~**无自动化测试**~~：已有 `tests/` + CI（见 PLAN P0-08/09）。
-3. **训练标签噪声**：`good` 图上若定位出噪声轮廓，可能进入训练集（当前逻辑对 good 基本 `pass` 跳过，但缺陷图多轮廓只取最大，可能丢次要缺陷）。
+3. ~~**训练标签噪声**~~：已改为每轮廓独立分类 + good 误检作负类（见 PLAN P1-05/06）。
 4. **CNN 与 CV 路径不一致**：CNN 用整图 64×64，非 localized ROI。
 5. ~~**C++ include .cpp**~~：已改为头文件 + `wafer_core` 库（见 PLAN P0-03）。
 6. ~~**OpenVINO 类别表写死**~~：改为 `*.meta.json` 契约加载（见 PLAN P0-05/06）。
@@ -618,9 +635,10 @@ WaferDefectX_Run <image_path>                      // CLI
 | 模块 | 文件 |
 |------|------|
 | 数据生成 | `python/data_generator.py` |
+| 真实数据解析 | `python/dataset_parser.py` |
 | 预处理 | `python/preprocessing.py`, `cpp/preprocess.cpp` |
 | 定位 | `python/defect_localization.py`, `cpp/defect_localization.cpp` |
-| 特征 | `python/features.py` |
+| 特征 | `python/features.py`, `cpp/feature_extraction.cpp` |
 | 分类工厂 | `python/classifier.py` |
 | RF 训练 | `python/train_eval.py` |
 | CNN 模型/训练 | `python/cnn_model.py`, `python/train_cnn.py` |
