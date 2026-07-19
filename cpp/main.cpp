@@ -1,10 +1,12 @@
 #include "defect_localization.hpp"
 #include "feature_extraction.hpp"
+#include "onnx_classifier.hpp"
 #include "preprocess.hpp"
 
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <opencv2/opencv.hpp>
 #include <sstream>
 #include <stdexcept>
@@ -61,16 +63,19 @@ static void validate_input(const cv::Mat &image, const std::string &path) {
 int main(int argc, char **argv) {
   try {
     if (argc < 2) {
-      log_error("Usage: ./WaferDefectX_Run [--json] <image_path>");
+      log_error("Usage: ./WaferDefectX_Run [--json] [--model model.onnx] <image_path>");
       return -1;
     }
 
     bool json_output = false;
     std::string image_path;
+    std::string model_path;
 
     for (int i = 1; i < argc; ++i) {
       if (std::string(argv[i]) == "--json") {
         json_output = true;
+      } else if (std::string(argv[i]) == "--model") {
+        if (i + 1 < argc) model_path = argv[++i];
       } else {
         image_path = argv[i];
       }
@@ -95,6 +100,13 @@ int main(int argc, char **argv) {
     DefectLocalizer localizer;
     FeatureExtractor extractor;
 
+    std::unique_ptr<OnnxClassifier> classifier;
+    if (!model_path.empty()) {
+      log_info("Loading ONNX model: " + model_path);
+      classifier = std::make_unique<OnnxClassifier>(model_path);
+      log_info("Model loaded successfully");
+    }
+
     auto start = std::chrono::high_resolution_clock::now();
 
     log_info("Running Preprocessing...");
@@ -105,6 +117,26 @@ int main(int argc, char **argv) {
 
     log_info("Extracting Features (" + std::to_string(result.contours.size()) + " defects)...");
     std::vector<DefectFeatures> features = extractor.extract_all(enhanced, result.contours);
+
+    std::vector<ClassifyResult> classifications;
+    if (classifier && !result.bboxes.empty()) {
+      log_info("Classifying ROIs...");
+      cv::Mat gray;
+      if (enhanced.channels() == 3) {
+        cv::cvtColor(enhanced, gray, cv::COLOR_BGR2GRAY);
+      } else {
+        gray = enhanced;
+      }
+
+      for (auto &bbox : result.bboxes) {
+        int x = std::max(0, bbox.x);
+        int y = std::max(0, bbox.y);
+        int w = std::min(bbox.width, gray.cols - x);
+        int h = std::min(bbox.height, gray.rows - y);
+        cv::Mat roi = gray(cv::Rect(x, y, w, h)).clone();
+        classifications.push_back(classifier->classify(roi));
+      }
+    }
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
@@ -117,6 +149,7 @@ int main(int argc, char **argv) {
       json << "  \"resolution\": [" << image.cols << ", " << image.rows << "],\n";
       json << "  \"channels\": " << image.channels() << ",\n";
       json << "  \"processing_ms\": " << total_ms << ",\n";
+      json << "  \"model\": \"" << json_escape(model_path) << "\",\n";
       json << "  \"defect_count\": " << result.contours.size() << ",\n";
       json << "  \"defects\": [\n";
       for (size_t i = 0; i < result.contours.size(); ++i) {
@@ -127,7 +160,16 @@ int main(int argc, char **argv) {
              << result.bboxes[i].y << ", "
              << result.bboxes[i].width << ", "
              << result.bboxes[i].height << "],\n";
-        json << "      \"features\": " << features_to_json(features[i]) << "\n";
+        json << "      \"features\": " << features_to_json(features[i]) << ",\n";
+        if (i < classifications.size()) {
+          json << "      \"classification\": {\n";
+          json << "        \"label\": \"" << classifications[i].label_name << "\",\n";
+          json << "        \"label_id\": " << classifications[i].label << ",\n";
+          json << "        \"confidence\": " << classifications[i].confidence << "\n";
+          json << "      }\n";
+        } else {
+          json << "      \"classification\": null\n";
+        }
         json << "    }";
       }
       if (!result.contours.empty()) json << "\n";
@@ -142,6 +184,10 @@ int main(int argc, char **argv) {
       for (size_t i = 0; i < result.bboxes.size(); ++i) {
         cv::rectangle(output, result.bboxes[i], cv::Scalar(0, 0, 255), 2);
         std::string label = "#" + std::to_string(i);
+        if (i < classifications.size()) {
+          label += " " + classifications[i].label_name +
+                   " (" + std::to_string(static_cast<int>(classifications[i].confidence * 100)) + "%)";
+        }
         cv::putText(output, label,
                     cv::Point(result.bboxes[i].x, result.bboxes[i].y - 5),
                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 1);
