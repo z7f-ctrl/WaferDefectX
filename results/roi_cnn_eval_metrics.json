@@ -1,0 +1,26 @@
+{
+  "accuracy": 0.9383033419023136,
+  "classification_report": "              precision    recall  f1-score   support\n\n        good       0.94      0.95      0.94       300\n    particle       0.95      0.95      0.95       315\n     scratch       0.91      0.90      0.91       163\n\n    accuracy                           0.94       778\n   macro avg       0.93      0.93      0.93       778\nweighted avg       0.94      0.94      0.94       778\n",
+  "confusion_matrix": [
+    [
+      285,
+      9,
+      6
+    ],
+    [
+      9,
+      298,
+      8
+    ],
+    [
+      10,
+      6,
+      147
+    ]
+  ],
+  "labels": [
+    "good",
+    "particle",
+    "scratch"
+  ]
+}

@@ -10,13 +10,13 @@ results/rf_model.meta.json
 results/ov_model/
 results/cnn_*.pth
 results/wafer_resnet18_*.pth
+results/wafer_mobilenet_*.pth
 results/*.onnx
 results/eval_metrics.json
 results/eval_predictions.csv
 
 # Large datasets
-data/wm811k/LSWMD.pkl
-data/wm811k/images/
+data/wm811k/
 
 # Python cache
 __pycache__/

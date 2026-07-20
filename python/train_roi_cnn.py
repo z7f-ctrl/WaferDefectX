@@ -150,7 +150,7 @@ def main():
 
     # --- Model ---
     from wafer_resnet import WaferResNet18
-    model = WaferResNet18(num_classes=3).to(device)
+    model = WaferResNet18(num_classes=3, patch_size=PATCH_SIZE).to(device)
     params = sum(p.numel() for p in model.parameters())
     print(f"\n[Model] WaferResNet18 — {params:,} parameters")
 

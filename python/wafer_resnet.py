@@ -20,28 +20,34 @@ class WaferResNet18(nn.Module, AbstractClassifier):
     """ResNet-18 adapted for wafer defect ROI classification.
 
     Modifications from standard ResNet-18:
-      - conv1: 1 channel input (grayscale) instead of 3
-      - fc: Linear(512 → num_classes) instead of 1000
+      - conv1: 1 channel input (grayscale), 3×3 kernel, stride=1
+        (avoids aggressive 4× downsampling for small patches)
+      - maxpool removed (preserves spatial resolution)
+      - fc: Linear(512 → num_classes)
     """
 
     NUM_CLASSES = 3
 
-    def __init__(self, num_classes: int = 3, pretrained: bool = False):
+    def __init__(self, num_classes: int = 3, pretrained: bool = False,
+                 patch_size: int = 64):
         nn.Module.__init__(self)
         self.num_classes = num_classes
+        self.patch_size = patch_size
 
         weights = models.ResNet18_Weights.DEFAULT if pretrained else None
         self.backbone = models.resnet18(weights=weights)
 
-        original_conv1 = self.backbone.conv1
         self.backbone.conv1 = nn.Conv2d(
-            1, 64, kernel_size=7, stride=2, padding=3, bias=False
+            1, 64, kernel_size=3, stride=1, padding=1, bias=False
         )
         if pretrained:
             with torch.no_grad():
+                orig_weight = models.resnet18().conv1.weight
                 self.backbone.conv1.weight.copy_(
-                    original_conv1.weight.mean(dim=1, keepdim=True)
+                    orig_weight.mean(dim=1, keepdim=True)
                 )
+
+        self.backbone.maxpool = nn.Identity()
 
         in_features = self.backbone.fc.in_features
         self.backbone.fc = nn.Linear(in_features, num_classes)
